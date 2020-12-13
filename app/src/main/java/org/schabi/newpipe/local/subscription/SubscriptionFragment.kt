@@ -2,21 +2,14 @@ package org.schabi.newpipe.local.subscription
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.DialogInterface
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Environment
 import android.os.Parcelable
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Toast
+import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
@@ -29,15 +22,8 @@ import com.xwray.groupie.Section
 import com.xwray.groupie.kotlinandroidextensions.GroupieViewHolder
 import icepick.State
 import io.reactivex.disposables.CompositeDisposable
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import kotlin.math.floor
-import kotlin.math.max
-import kotlinx.android.synthetic.main.dialog_title.view.itemAdditionalDetails
-import kotlinx.android.synthetic.main.dialog_title.view.itemTitleView
-import kotlinx.android.synthetic.main.fragment_subscription.items_list
+import kotlinx.android.synthetic.main.dialog_title.view.*
+import kotlinx.android.synthetic.main.fragment_subscription.*
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
@@ -45,29 +31,21 @@ import org.schabi.newpipe.fragments.BaseStateFragment
 import org.schabi.newpipe.local.subscription.SubscriptionViewModel.SubscriptionState
 import org.schabi.newpipe.local.subscription.dialog.FeedGroupDialog
 import org.schabi.newpipe.local.subscription.dialog.FeedGroupReorderDialog
-import org.schabi.newpipe.local.subscription.item.ChannelItem
-import org.schabi.newpipe.local.subscription.item.EmptyPlaceholderItem
-import org.schabi.newpipe.local.subscription.item.FeedGroupAddItem
-import org.schabi.newpipe.local.subscription.item.FeedGroupCardItem
-import org.schabi.newpipe.local.subscription.item.FeedGroupCarouselItem
-import org.schabi.newpipe.local.subscription.item.FeedImportExportItem
-import org.schabi.newpipe.local.subscription.item.HeaderWithMenuItem
+import org.schabi.newpipe.local.subscription.item.*
 import org.schabi.newpipe.local.subscription.item.HeaderWithMenuItem.Companion.PAYLOAD_UPDATE_VISIBILITY_MENU_ITEM
 import org.schabi.newpipe.local.subscription.services.SubscriptionsExportService
 import org.schabi.newpipe.local.subscription.services.SubscriptionsExportService.EXPORT_COMPLETE_ACTION
 import org.schabi.newpipe.local.subscription.services.SubscriptionsExportService.KEY_FILE_PATH
 import org.schabi.newpipe.local.subscription.services.SubscriptionsImportService
-import org.schabi.newpipe.local.subscription.services.SubscriptionsImportService.IMPORT_COMPLETE_ACTION
-import org.schabi.newpipe.local.subscription.services.SubscriptionsImportService.KEY_MODE
-import org.schabi.newpipe.local.subscription.services.SubscriptionsImportService.KEY_VALUE
-import org.schabi.newpipe.local.subscription.services.SubscriptionsImportService.PREVIOUS_EXPORT_MODE
+import org.schabi.newpipe.local.subscription.services.SubscriptionsImportService.*
 import org.schabi.newpipe.report.UserAction
+import org.schabi.newpipe.util.*
 import org.schabi.newpipe.util.AnimationUtils.animateView
-import org.schabi.newpipe.util.FilePickerActivityHelper
-import org.schabi.newpipe.util.NavigationHelper
-import org.schabi.newpipe.util.OnClickGesture
-import org.schabi.newpipe.util.ShareUtils
-import org.schabi.newpipe.util.ThemeHelper
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.math.floor
+import kotlin.math.max
 
 class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
     private lateinit var viewModel: SubscriptionViewModel
@@ -154,6 +132,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
         if (supportActionBar != null) {
             supportActionBar.setDisplayShowTitleEnabled(true)
             setTitle(getString(R.string.tab_subscriptions))
+            setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
         }
     }
 
