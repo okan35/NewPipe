@@ -3,7 +3,6 @@ package org.schabi.newpipe.fragments;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
-import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -19,29 +18,29 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapterMenuWorkaround;
-import androidx.viewpager.widget.ViewPager;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.tabs.TabLayout;
 
 import org.schabi.newpipe.BaseFragment;
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.databinding.FragmentMainBinding;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.report.ErrorActivity;
+import org.schabi.newpipe.report.ErrorInfo;
 import org.schabi.newpipe.report.UserAction;
 import org.schabi.newpipe.settings.tabs.Tab;
 import org.schabi.newpipe.settings.tabs.TabsManager;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.ServiceHelper;
 import org.schabi.newpipe.util.ThemeHelper;
-import org.schabi.newpipe.views.ScrollableTabLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainFragment extends BaseFragment implements TabLayout.OnTabSelectedListener {
-    private ViewPager viewPager;
+    private FragmentMainBinding binding;
     private SelectedTabsPagerAdapter pagerAdapter;
-    private ScrollableTabLayout tabLayout;
 
     private final List<Tab> tabsList = new ArrayList<>();
     private TabsManager tabsManager;
@@ -89,13 +88,12 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
 
-        tabLayout = rootView.findViewById(R.id.main_tab_layout);
-        viewPager = rootView.findViewById(R.id.pager);
+        binding = FragmentMainBinding.bind(rootView);
 
-        tabLayout.setTabIconTint(ColorStateList.valueOf(
+        binding.mainTabLayout.setTabIconTint(ColorStateList.valueOf(
                 ThemeHelper.resolveColorFromAttr(requireContext(), R.attr.colorAccent)));
-        tabLayout.setupWithViewPager(viewPager);
-        tabLayout.addOnTabSelectedListener(this);
+        binding.mainTabLayout.setupWithViewPager(binding.pager);
+        binding.mainTabLayout.addOnTabSelectedListener(this);
 
         setupTabs();
     }
@@ -119,8 +117,9 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     public void onDestroy() {
         super.onDestroy();
         tabsManager.unsetSavedTabsListener();
-        if (viewPager != null) {
-            viewPager.setAdapter(null);
+        if (binding != null) {
+            binding.pager.setAdapter(null);
+            binding = null;
         }
     }
 
@@ -171,19 +170,19 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
                     getChildFragmentManager(), tabsList);
         }
 
-        viewPager.setAdapter(null);
-        viewPager.setOffscreenPageLimit(tabsList.size());
-        viewPager.setAdapter(pagerAdapter);
+        binding.pager.setAdapter(null);
+        binding.pager.setOffscreenPageLimit(tabsList.size());
+        binding.pager.setAdapter(pagerAdapter);
 
         updateTabsIconAndDescription();
-        updateTitleForTab(viewPager.getCurrentItem());
+        updateTitleForTab(binding.pager.getCurrentItem());
 
         hasTabsChanged = false;
     }
 
     private void updateTabsIconAndDescription() {
         for (int i = 0; i < tabsList.size(); i++) {
-            final TabLayout.Tab tabToSet = tabLayout.getTabAt(i);
+            final TabLayout.Tab tabToSet = binding.mainTabLayout.getTabAt(i);
             if (tabToSet != null) {
                 final Tab tab = tabsList.get(i);
                 tabToSet.setIcon(tab.getTabIconRes(requireContext()));
@@ -242,7 +241,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             }
 
             if (throwable != null) {
-                ErrorActivity.reportError(context, throwable, null, null, ErrorActivity.ErrorInfo
+                ErrorActivity.reportError(context, throwable, null, null, ErrorInfo
                         .make(UserAction.UI_ERROR, "none", "", R.string.app_ui_crash));
                 return new BlankFragment();
             }

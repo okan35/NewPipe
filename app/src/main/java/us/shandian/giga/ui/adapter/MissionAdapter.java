@@ -1,7 +1,8 @@
 package us.shandian.giga.ui.adapter;
 
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
+import android.app.NotificationManager;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -26,6 +27,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.DiffUtil;
@@ -39,8 +42,10 @@ import org.schabi.newpipe.BuildConfig;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.report.ErrorActivity;
+import org.schabi.newpipe.report.ErrorInfo;
 import org.schabi.newpipe.report.UserAction;
 import org.schabi.newpipe.util.NavigationHelper;
+import org.schabi.newpipe.util.ShareUtils;
 
 import java.io.File;
 import java.net.URI;
@@ -48,10 +53,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import io.reactivex.Observable;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.schedulers.Schedulers;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import us.shandian.giga.get.DownloadMission;
 import us.shandian.giga.get.FinishedMission;
 import us.shandian.giga.get.Mission;
@@ -90,6 +95,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
     private static final String DEFAULT_MIME_TYPE = "*/*";
     private static final String UNDEFINED_ETA = "--:--";
 
+    private static final int HASH_NOTIFICATION_ID = 123790;
 
     static {
         ALGORITHMS.put(R.id.md5, "MD5");
@@ -342,10 +348,9 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         if (BuildConfig.DEBUG)
             Log.v(TAG, "Mime: " + mimeType + " package: " + BuildConfig.APPLICATION_ID + ".provider");
 
-        Uri uri = resolveShareableUri(mission);
+        final Uri uri = resolveShareableUri(mission);
 
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_VIEW);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(uri, mimeType);
         intent.addFlags(FLAG_GRANT_READ_URI_PERMISSION);
 
@@ -359,7 +364,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         //mContext.grantUriPermission(packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
         if (intent.resolveActivity(mContext.getPackageManager()) != null) {
-            mContext.startActivity(intent);
+            ShareUtils.openIntentInApp(mContext, intent);
         } else {
             Toast.makeText(mContext, R.string.toast_no_player, Toast.LENGTH_LONG).show();
         }
@@ -368,12 +373,23 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
     private void shareFile(Mission mission) {
         if (checkInvalidFile(mission)) return;
 
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType(resolveMimeType(mission));
-        intent.putExtra(Intent.EXTRA_STREAM, resolveShareableUri(mission));
-        intent.addFlags(FLAG_GRANT_READ_URI_PERMISSION);
+        final Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType(resolveMimeType(mission));
+        shareIntent.putExtra(Intent.EXTRA_STREAM, resolveShareableUri(mission));
+        shareIntent.addFlags(FLAG_GRANT_READ_URI_PERMISSION);
+        final Intent intent = new Intent(Intent.ACTION_CHOOSER);
+        intent.putExtra(Intent.EXTRA_INTENT, shareIntent);
+        intent.putExtra(Intent.EXTRA_TITLE, mContext.getString(R.string.share_dialog_title));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        mContext.startActivity(Intent.createChooser(intent, null));
+        try {
+            intent.setPackage("android");
+            mContext.startActivity(intent);
+        } catch (final ActivityNotFoundException e) {
+            // falling back to OEM chooser if Android's system chooser was removed by the OEM
+            intent.setPackage(null);
+            mContext.startActivity(intent);
+        }
     }
 
     /**
@@ -575,7 +591,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
                 mission.errObject,
                 null,
                 null,
-                ErrorActivity.ErrorInfo.make(action, service, request.toString(), reason)
+                ErrorInfo.make(action, service, request.toString(), reason)
         );
     }
 
@@ -677,28 +693,28 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
                 return true;
             case R.id.md5:
             case R.id.sha1:
-                ProgressDialog progressDialog = null;
-                if (mContext != null) {
-                    // Create dialog
-                    progressDialog = new ProgressDialog(mContext);
-                    progressDialog.setCancelable(false);
-                    progressDialog.setMessage(mContext.getString(R.string.msg_wait));
-                    progressDialog.show();
-                }
-                final ProgressDialog finalProgressDialog = progressDialog;
+                final NotificationManager notificationManager
+                        = ContextCompat.getSystemService(mContext, NotificationManager.class);
+                final NotificationCompat.Builder progressNotificationBuilder
+                        = new NotificationCompat.Builder(mContext,
+                        mContext.getString(R.string.hash_channel_id))
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setSmallIcon(R.drawable.ic_newpipe_triangle_white)
+                        .setContentTitle(mContext.getString(R.string.msg_calculating_hash))
+                        .setContentText(mContext.getString(R.string.msg_wait))
+                        .setProgress(0, 0, true)
+                        .setOngoing(true);
+
+                notificationManager.notify(HASH_NOTIFICATION_ID, progressNotificationBuilder
+                        .build());
                 final StoredFileHelper storage = h.item.mission.storage;
                 compositeDisposable.add(
                         Observable.fromCallable(() -> Utility.checksum(storage, ALGORITHMS.get(id)))
                                 .subscribeOn(Schedulers.computation())
                                 .observeOn(AndroidSchedulers.mainThread())
                                 .subscribe(result -> {
-                                    if (finalProgressDialog != null) {
-                                        Utility.copyToClipboard(finalProgressDialog.getContext(),
-                                                result);
-                                        if (mContext != null) {
-                                            finalProgressDialog.dismiss();
-                                        }
-                                    }
+                                    Utility.copyToClipboard(mContext, result);
+                                    notificationManager.cancel(HASH_NOTIFICATION_ID);
                                 })
                 );
                 return true;

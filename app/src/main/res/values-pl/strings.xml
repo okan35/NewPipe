@@ -269,8 +269,8 @@
     <string name="switch_to_main">Odtwarzaj na pierwszym planie</string>
     <string name="import_data_title">Importuj dane</string>
     <string name="export_data_title">Eksportuj dane</string>
-    <string name="import_data_summary">Zastępuje Twoją bieżącą historię i subskrypcje</string>
-    <string name="export_data_summary">Eksportuje bieżącą historię, subskrypcje i playlisty</string>
+    <string name="import_data_summary">Zastępuje Twoją bieżącą historię, subskrypcje, playlisty i (opcjonalnie) ustawienia</string>
+    <string name="export_data_summary">Eksportuje bieżącą historię, subskrypcje, playlisty i ustawienia</string>
     <string name="detail_drag_description">Przeciągnij, aby zmienić kolejność</string>
     <string name="create">Utwórz</string>
     <string name="delete_one">Usuń bieżący</string>
@@ -653,8 +653,16 @@
     <string name="clear_cookie_summary">Wyczyść ciasteczka, które NewPipe przechowuje po rozwiązaniu reCAPTCHA</string>
     <string name="recaptcha_cookies_cleared">Ciasteczka reCAPTCHA zostały wyczyszczone</string>
     <string name="clear_cookie_title">Wyczyść ciasteczka reCAPTCHA</string>
-    <string name="youtube_restricted_mode_enabled_summary">YouTube udostępnia \"Tryb ograniczonego dostępu\", który ukrywa treści potencjalnie dla dorosłych.</string>
-    <string name="show_age_restricted_content_summary">Pokaż treści nieodpowiednie dla dzieci, ponieważ mają ograniczenia wiekowe (np. 18+).</string>
+    <string name="youtube_restricted_mode_enabled_summary">YouTube udostępnia \"Tryb ograniczonego dostępu\", który ukrywa treści potencjalnie dla dorosłych</string>
+    <string name="show_age_restricted_content_summary">Pokaż treści nieodpowiednie dla dzieci, ponieważ mają ograniczenia wiekowe (np. 18+)</string>
     <string name="notification_colorize_summary">Niech Android dostosuje kolor powiadomienia zgodnie z głównym kolorem na miniaturze (nie jest to dostępne na wszystkich urządzeniach)</string>
     <string name="notification_colorize_title">Pokolorowanie powiadomienia</string>
+    <string name="show_thumbnail_summary">Używaj miniatury zarówno jako tła ekranu blokady, jak i powiadomień</string>
+    <string name="show_thumbnail_title">Pokazuj miniaturę</string>
+    <string name="recent">Ostatnie</string>
+    <string name="msg_calculating_hash">Obliczanie skrótu</string>
+    <string name="hash_channel_description">Powiadomienia o postępie tworzenia skrótów wideo</string>
+    <string name="hash_channel_name">Powiadomienie o obliczaniu skrótu wideo</string>
+    <string name="show_meta_info_summary">Wyłącz, aby ukryć pola z dodatkowymi informacjami o twórcy strumienia, zawartości strumienia lub żądaniu wyszukiwania.</string>
+    <string name="show_meta_info_title">Pokaż metainformacje</string>
 </resources>

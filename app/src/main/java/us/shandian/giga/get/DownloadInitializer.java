@@ -147,10 +147,10 @@ public class DownloadInitializer extends Thread {
                     if (!mMission.running || Thread.interrupted()) return;
                 }
 
-                SharpStream fs = mMission.storage.getStream();
-                fs.setLength(mMission.offsets[mMission.current] + mMission.length);
-                fs.seek(mMission.offsets[mMission.current]);
-                fs.close();
+                try (SharpStream fs = mMission.storage.getStream()) {
+                    fs.setLength(mMission.offsets[mMission.current] + mMission.length);
+                    fs.seek(mMission.offsets[mMission.current]);
+                }
 
                 if (!mMission.running || Thread.interrupted()) return;
 
@@ -160,11 +160,11 @@ public class DownloadInitializer extends Thread {
                     MissionRecoveryInfo recovery = mMission.recoveryInfo[mMission.current];
 
                     if (!TextUtils.isEmpty(entityTag)) {
-                        recovery.validateCondition = entityTag;
+                        recovery.setValidateCondition(entityTag);
                     } else if (!TextUtils.isEmpty(lastModified)) {
-                        recovery.validateCondition = lastModified;// Note: this is less precise
+                        recovery.setValidateCondition(lastModified);// Note: this is less precise
                     } else {
-                        recovery.validateCondition = null;
+                        recovery.setValidateCondition(null);
                     }
                 }
 

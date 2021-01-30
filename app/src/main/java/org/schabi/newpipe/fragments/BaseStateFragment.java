@@ -10,10 +10,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
-import com.jakewharton.rxbinding2.view.RxView;
+import com.jakewharton.rxbinding4.view.RxView;
 
 import org.schabi.newpipe.BaseFragment;
 import org.schabi.newpipe.MainActivity;
@@ -22,9 +23,10 @@ import org.schabi.newpipe.ReCaptchaActivity;
 import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException;
 import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException;
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException;
+import org.schabi.newpipe.ktx.ExceptionUtils;
 import org.schabi.newpipe.report.ErrorActivity;
+import org.schabi.newpipe.report.ErrorInfo;
 import org.schabi.newpipe.report.UserAction;
-import org.schabi.newpipe.util.ExceptionUtils;
 import org.schabi.newpipe.util.InfoCache;
 
 import java.util.Collections;
@@ -33,9 +35,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import icepick.State;
-import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.disposables.Disposable;
 
-import static org.schabi.newpipe.util.AnimationUtils.animateView;
+import static org.schabi.newpipe.ktx.ViewUtils.animate;
 
 public abstract class BaseStateFragment<I> extends BaseFragment implements ViewContract<I> {
     @State
@@ -47,12 +50,14 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
     @Nullable
     private ProgressBar loadingProgressBar;
 
+    private Disposable errorDisposable;
+
     protected View errorPanelRoot;
     private Button errorButtonRetry;
     private TextView errorTextView;
 
     @Override
-    public void onViewCreated(final View rootView, final Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull final View rootView, final Bundle savedInstanceState) {
         super.onViewCreated(rootView, savedInstanceState);
         doInitialLoadLogic();
     }
@@ -61,6 +66,14 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
     public void onPause() {
         super.onPause();
         wasLoading.set(isLoading.get());
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (errorDisposable != null) {
+            errorDisposable.dispose();
+        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -82,7 +95,7 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
     @Override
     protected void initListeners() {
         super.initListeners();
-        RxView.clicks(errorButtonRetry)
+        errorDisposable = RxView.clicks(errorButtonRetry)
                 .debounce(300, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(o -> onRetryButtonClicked());
@@ -119,35 +132,35 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
     @Override
     public void showLoading() {
         if (emptyStateView != null) {
-            animateView(emptyStateView, false, 150);
+            animate(emptyStateView, false, 150);
         }
         if (loadingProgressBar != null) {
-            animateView(loadingProgressBar, true, 400);
+            animate(loadingProgressBar, true, 400);
         }
-        animateView(errorPanelRoot, false, 150);
+        animate(errorPanelRoot, false, 150);
     }
 
     @Override
     public void hideLoading() {
         if (emptyStateView != null) {
-            animateView(emptyStateView, false, 150);
+            animate(emptyStateView, false, 150);
         }
         if (loadingProgressBar != null) {
-            animateView(loadingProgressBar, false, 0);
+            animate(loadingProgressBar, false, 0);
         }
-        animateView(errorPanelRoot, false, 150);
+        animate(errorPanelRoot, false, 150);
     }
 
     @Override
     public void showEmptyState() {
         isLoading.set(false);
         if (emptyStateView != null) {
-            animateView(emptyStateView, true, 200);
+            animate(emptyStateView, true, 200);
         }
         if (loadingProgressBar != null) {
-            animateView(loadingProgressBar, false, 0);
+            animate(loadingProgressBar, false, 0);
         }
-        animateView(errorPanelRoot, false, 150);
+        animate(errorPanelRoot, false, 150);
     }
 
     @Override
@@ -162,11 +175,11 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
 
         errorTextView.setText(message);
         if (showRetryButton) {
-            animateView(errorButtonRetry, true, 600);
+            animate(errorButtonRetry, true, 600);
         } else {
-            animateView(errorButtonRetry, false, 0);
+            animate(errorButtonRetry, false, 0);
         }
-        animateView(errorPanelRoot, true, 300);
+        animate(errorPanelRoot, true, 300);
     }
 
     @Override
@@ -252,7 +265,7 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
         }
 
         ErrorActivity.reportError(getContext(), exception, MainActivity.class, null,
-                ErrorActivity.ErrorInfo.make(userAction, serviceName == null ? "none" : serviceName,
+                ErrorInfo.make(userAction, serviceName == null ? "none" : serviceName,
                         request == null ? "none" : request, errorId));
     }
 
@@ -265,7 +278,7 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
 
     /**
      * Show a SnackBar and only call
-     * {@link ErrorActivity#reportError(Context, List, Class, View, ErrorActivity.ErrorInfo)}
+     * {@link ErrorActivity#reportError(Context, List, Class, View, ErrorInfo)}
      * IF we a find a valid view (otherwise the error screen appears).
      *
      * @param exception List of the exceptions to show
@@ -291,6 +304,6 @@ public abstract class BaseStateFragment<I> extends BaseFragment implements ViewC
         }
 
         ErrorActivity.reportError(getContext(), exception, MainActivity.class, rootView,
-                ErrorActivity.ErrorInfo.make(userAction, serviceName, request, errorId));
+                ErrorInfo.make(userAction, serviceName, request, errorId));
     }
 }
